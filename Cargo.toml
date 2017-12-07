@@ -1,0 +1,10 @@
+[package]
+name = "fusion_mouse"
+version = "0.1.0"
+authors = ["Tristan Hume <tristan@thume.ca>"]
+
+[dependencies]
+linuxtrack-sys = "1.0.1"
+cgmath = "0.15"
+enigo = "0.0.11"
+rand = "0.3"
