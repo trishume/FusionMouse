@@ -25,7 +25,11 @@ unsafe fn get_one_pose() -> Result<Pose, Status> {
                                        &mut blobs_read as *mut _);
     // println!("got pose {:?}", res);
     // println!("Pose: {:?}", pose);
-    // println!("Blobs: {:?}", blobs);
+    // println!("Blobs: {:?}", blobs_read);
+
+    if res != 1 || blobs_read < 3 {
+        return Err(STATUS_RUNNING);
+    }
     return Ok(pose);
 }
 
