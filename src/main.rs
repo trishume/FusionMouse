@@ -1,7 +1,6 @@
 extern crate linuxtrack_sys;
 extern crate cgmath;
 extern crate enigo;
-extern crate rand;
 
 mod inputs;
 mod ltr_input;

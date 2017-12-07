@@ -2,7 +2,6 @@ use std::f32::consts::PI;
 use std::f32;
 
 use cgmath::{Vector2, vec2};
-use rand::{self, Rng};
 
 pub struct LowPassFilter {
     first_time: bool,
