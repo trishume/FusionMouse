@@ -104,12 +104,23 @@ impl Acceleration {
     }
 }
 
-/// Round a number where the probability of rounding up is the fractional part
-pub fn stochastic_round(x: f32) -> i32 {
-    let mut rng = rand::thread_rng();
-    let mut res = x.trunc();
-    if rng.next_f32() < x.fract().abs() {
-        res += res.signum();
+pub struct AccumulatingRounder {
+    accum: f32,
+}
+
+impl AccumulatingRounder {
+    pub fn new() -> Self {
+        AccumulatingRounder { accum: 0.0 }
     }
-    res as i32
+
+    pub fn round(&mut self, x: f32) -> i32 {
+        let mut res = x.trunc();
+        self.accum += x.fract();
+        if self.accum.abs() >= 1.0 {
+            let nudge = self.accum.signum();
+            res += nudge;
+            self.accum -= nudge;
+        }
+        res as i32
+    }
 }

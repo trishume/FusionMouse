@@ -14,17 +14,17 @@ use std::sync::mpsc::Receiver;
 use std::time::Instant;
 
 use inputs::{InputPool, Input};
-use transforms::{VecOneEuroFilter, Acceleration, stochastic_round};
+use transforms::{VecOneEuroFilter, Acceleration, AccumulatingRounder};
 
 fn run_pipeline(rx: Receiver<Input>) {
     // configuration
     let accel = Acceleration {
-        cd_min: 10.0,
-        cd_max: 65.0,
-        v_min: 0.0004,
-        v_max: 0.0025,
-        lambda: 1000.0,
-        ratio: 0.7,
+        cd_min: 8.0, // min gain
+        cd_max: 65.0, // max gain
+        v_min: 0.0004, // input velocity lower bound
+        v_max: 0.0025, // input velocity upper bound
+        lambda: 1000.0, // slope of curve at inflection point
+        ratio: 0.7, // where inflection lies between v_min and v_max
     };
 
     // input state
@@ -32,8 +32,11 @@ fn run_pipeline(rx: Receiver<Input>) {
 
     // pipeline state
     let mut last_tick = Instant::now();
-    let mut head_filter = VecOneEuroFilter::new(6.0, 100.0, 1.0);
+    let mut head_filter = VecOneEuroFilter::new(6.0, 1000.0, 1.0);
     let mut last_head_pose: Option<Vector2<f32>> = None;
+
+    let mut x_round = AccumulatingRounder::new();
+    let mut y_round = AccumulatingRounder::new();
 
     let mut enigo = Enigo::new();
 
@@ -66,11 +69,13 @@ fn run_pipeline(rx: Receiver<Input>) {
             accel.transform(head_delta.y, dt)
         );
 
-        // do something ===============================
-        enigo.mouse_move_relative(
-            stochastic_round(head_cursor_move.x),
-            stochastic_round(head_cursor_move.y),
+        let rounded_move = vec2(
+            x_round.round(head_cursor_move.x),
+            y_round.round(head_cursor_move.y),
         );
+
+        // do something ===============================
+        enigo.mouse_move_relative(rounded_move.x, rounded_move.y);
     }
 }
 
