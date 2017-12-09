@@ -3,6 +3,7 @@ use std::thread;
 
 pub enum Input {
     LinuxTrackHead { yaw: f32, pitch: f32 },
+    TobiiGaze { x: f32, y: f32 },
 }
 
 pub enum InputAction {

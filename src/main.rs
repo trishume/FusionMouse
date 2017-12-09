@@ -1,9 +1,11 @@
 extern crate linuxtrack_sys;
+extern crate tobii_sys;
 extern crate cgmath;
 extern crate enigo;
 
 mod inputs;
 mod ltr_input;
+mod tobii_input;
 mod transforms;
 
 use cgmath::{vec2, Vector2};
@@ -27,7 +29,8 @@ fn run_pipeline(rx: Receiver<Input>) {
     };
 
     // input state
-    let mut raw_head_pose: Vector2<f32>;
+    let mut raw_head_pose: Vector2<f32> = vec2(0.0,0.0);
+    let mut raw_gaze: Vector2<f32> = vec2(0.0,0.0);
 
     // pipeline state
     let mut last_tick = Instant::now();
@@ -44,8 +47,13 @@ fn run_pipeline(rx: Receiver<Input>) {
         match rx.recv().unwrap() {
             Input::LinuxTrackHead { yaw, pitch } => {
                 raw_head_pose = vec2(yaw, pitch)*-1.0;
+            },
+            Input::TobiiGaze { x, y } => {
+                raw_gaze = vec2(x,y);
             }
         }
+
+        println!("GAZE {:?}", raw_gaze);
 
         // timing info ================================
         let tick = Instant::now();
@@ -74,13 +82,16 @@ fn run_pipeline(rx: Receiver<Input>) {
         );
 
         // do something ===============================
-        enigo.mouse_move_relative(rounded_move.x, rounded_move.y);
+        if rounded_move.x > 0 && rounded_move.y > 0 {
+            enigo.mouse_move_relative(rounded_move.x, rounded_move.y);
+        }
     }
 }
 
 fn main() {
     println!("Hello, world!");
     let (mut pool, rx) = InputPool::new();
-    pool.spawn(ltr_input::listen);
+    // pool.spawn(ltr_input::listen);
+    pool.spawn(tobii_input::listen);
     run_pipeline(rx);
 }
