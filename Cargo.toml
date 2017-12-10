@@ -6,5 +6,5 @@ authors = ["Tristan Hume <tristan@thume.ca>"]
 [dependencies]
 linuxtrack-sys = "1.0.1"
 cgmath = "0.15"
-enigo = "0.0.11"
+enigo = {path="../enigo"}
 tobii-sys = {path="../tobii-sys"}

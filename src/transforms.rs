@@ -1,5 +1,6 @@
 use std::f32::consts::PI;
 use std::f32;
+use std::collections::VecDeque;
 
 use cgmath::{Vector2, vec2};
 
@@ -121,5 +122,54 @@ impl AccumulatingRounder {
             self.accum -= nudge;
         }
         res as i32
+    }
+}
+
+pub struct FixationFilter {
+    buffer: VecDeque<Vector2<f32>>,
+    pub min_fixation_s: f32,
+    pub max_velocity: f32,
+    pub cur: Vector2<f32>,
+}
+
+impl FixationFilter {
+    const MAX_BUFFER: usize = 512;
+
+    pub fn new(min_fixation_s: f32, max_velocity: f32) -> Self {
+        FixationFilter { min_fixation_s, max_velocity, buffer: VecDeque::with_capacity(Self::MAX_BUFFER), cur: vec2(0.0,0.0)}
+    }
+
+    pub fn transform(&mut self, pt: Vector2<f32>, dt: f32) -> Vector2<f32> {
+        if self.buffer.len() >= Self::MAX_BUFFER {
+            self.buffer.pop_front();
+        }
+        self.buffer.push_back(pt);
+        let len = self.buffer.len();
+
+        if dt == 0.0 { return pt; }
+        let mut to_sample = (self.min_fixation_s / dt).round() as usize;
+        if to_sample > len {
+            println!("Warning: need {:?} fixation samples but only have {}", to_sample, len);
+            to_sample = len;
+        }
+
+        // compute dispersion for to_sample by the method from the I-DT algorithm
+        let mut min = pt;
+        let mut max = pt;
+        for i in (len-to_sample)..len {
+            let el = self.buffer.get(i).unwrap();
+            if el.x < min.x { min.x = el.x; }
+            if el.y < min.y { min.y = el.y; }
+            if el.x >= max.x { max.x = el.x; }
+            if el.y >= max.y { max.y = el.y; }
+        }
+        let diffs = max - min;
+        let dispersion = diffs.x + diffs.y;
+
+        let max_dispersion = self.max_velocity*self.min_fixation_s;
+        if dispersion < max_dispersion {
+            self.cur = pt;
+        }
+        self.cur
     }
 }
