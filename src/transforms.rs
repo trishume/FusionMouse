@@ -133,7 +133,7 @@ pub struct FixationFilter {
 }
 
 impl FixationFilter {
-    const MAX_BUFFER: usize = 512;
+    const MAX_BUFFER: usize = 128;
 
     pub fn new(min_fixation_s: f32, max_velocity: f32) -> Self {
         FixationFilter { min_fixation_s, max_velocity, buffer: VecDeque::with_capacity(Self::MAX_BUFFER), cur: vec2(0.0,0.0)}

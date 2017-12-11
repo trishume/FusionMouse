@@ -2,6 +2,7 @@ extern crate linuxtrack_sys;
 extern crate tobii_sys;
 extern crate cgmath;
 extern crate enigo;
+extern crate signpost;
 
 mod inputs;
 mod ltr_input;
@@ -55,9 +56,8 @@ fn run_pipeline(rx: Receiver<Input>) {
 
     loop {
         // update input state =========================
-        let tick = Instant::now();
         let mut tick_gaze = false;
-        let mut tick_head = true;
+        let mut tick_head = false;
         match rx.recv().unwrap() {
             Input::LinuxTrackHead { yaw, pitch } => {
                 raw_head_pose = vec2(yaw, pitch)*-1.0;
@@ -69,10 +69,14 @@ fn run_pipeline(rx: Receiver<Input>) {
             }
         }
 
+        let tick = Instant::now();
+        let _signpost = signpost::AutoTrace::new(1, &[0,0,0, signpost::Color::Blue as usize]);
+
         // compute pipeline results ===================
         let mut rounded_move = vec2(0i32,0i32);
         if tick_head {
             let dt = calc_dt(tick, &mut last_head_tick);
+            // println!("dt: {}", dt);
             let smoothed_head = head_filter.filter(raw_head_pose, dt);
             // let smoothed_head = raw_head_pose;
 
@@ -98,21 +102,21 @@ fn run_pipeline(rx: Receiver<Input>) {
             let (display_width, display_height) = Enigo::main_display_size();
             let px_gaze = vec2(raw_gaze.x * (display_width as f32), raw_gaze.y * (display_height as f32));
             let fixation = fixation_filter.transform(px_gaze, dt);
-            println!("GAZE {:?}", fixation);
+            // println!("GAZE {:?}", fixation);
         }
 
         // do something ===============================
-        // if rounded_move.x.abs() > 0 || rounded_move.y.abs() > 0 {
-        //     enigo.mouse_move_relative(rounded_move.x, rounded_move.y);
-        // }
-        enigo.mouse_move_to(fixation_filter.cur.x as i32, fixation_filter.cur.y as i32);
+        if rounded_move.x.abs() > 0 || rounded_move.y.abs() > 0 {
+            enigo.mouse_move_relative(rounded_move.x, rounded_move.y);
+        }
+        // enigo.mouse_move_to(fixation_filter.cur.x as i32, fixation_filter.cur.y as i32);
     }
 }
 
 fn main() {
     println!("Hello, world!");
     let (mut pool, rx) = InputPool::new();
-    // pool.spawn(ltr_input::listen);
+    pool.spawn(ltr_input::listen);
     pool.spawn(tobii_input::listen);
     run_pipeline(rx);
 }

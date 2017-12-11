@@ -6,6 +6,7 @@ use std::os::raw;
 use std::sync::mpsc::{SyncSender, Receiver};
 
 use inputs::{Input, InputAction};
+use signpost;
 
 unsafe fn get_one_pose() -> Result<Pose, Status> {
     let res = linuxtrack_wait(1000); // 1 second timeout
@@ -15,6 +16,7 @@ unsafe fn get_one_pose() -> Result<Pose, Status> {
         println!("Status: {:?}", status);
         return Err(status);
     }
+    signpost::start(3, &[0,0,0, signpost::Color::Green as usize]);
 
     let mut pose: Pose = mem::zeroed();
     let mut blobs: [f32; 9] = [0.0; 9];
@@ -53,6 +55,7 @@ unsafe fn input_loop(output: SyncSender<Input>, inbox: Receiver<InputAction>) {
         output
             .send(input)
             .expect("shutdown should come before channel close");
+        signpost::end(3, &[0,0,0, signpost::Color::Green as usize]);
     }
 }
 

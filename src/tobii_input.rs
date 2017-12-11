@@ -9,6 +9,7 @@ use std::ffi::{CStr, CString};
 use inputs::{Input, InputAction};
 
 use tobii_sys::helpers::{self, PtrWrapper, status_to_result, TobiiError};
+use signpost;
 
 struct CallbackContext {
     output: SyncSender<Input>,
@@ -26,8 +27,12 @@ fn gaze_callback(gaze_point: *const GazePoint, user_data: *mut ::std::os::raw::c
     assert_ne!(user_data,ptr::null_mut());
     let context = &*(user_data as *mut CallbackContext);
     let pt = &*gaze_point;
-    if pt.validity != TOBII_VALIDITY_VALID { return; }
+    if pt.validity != TOBII_VALIDITY_VALID {
+        println!("INVALID {}", pt.timestamp_us);
+        return;
+    }
     let event = Input::TobiiGaze { x: pt.position_xy[0], y: pt.position_xy[1]};
+    signpost::trace(2, &[0,0,0, signpost::Color::Red as usize]);
     context.output.send(event).unwrap();
 }
 

@@ -104,6 +104,7 @@ dependencies = [
  "cgmath 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "enigo 0.0.11",
  "linuxtrack-sys 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "signpost 0.1.0 (git+https://github.com/pcwalton/signpost)",
  "tobii-sys 0.1.0",
 ]
 
@@ -156,6 +157,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "signpost"
+version = "0.1.0"
+source = "git+https://github.com/pcwalton/signpost#7ed712507f343c38646b9d1fefd049166f9c9a18"
+
+[[package]]
 name = "tobii-sys"
 version = "0.1.0"
 
@@ -198,6 +204,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum objc 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "877f30f37acef6749b1841cceab289707f211aecfc756553cd63976190e6cc2e"
 "checksum pkg-config 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)" = "3a8b4c6b8165cd1a1cd4b9b120978131389f64bdaf456435caa41e630edba903"
 "checksum rand 0.3.18 (registry+https://github.com/rust-lang/crates.io-index)" = "6475140dfd8655aeb72e1fd4b7a1cc1c202be65d71669476e392fe62532b9edd"
+"checksum signpost 0.1.0 (git+https://github.com/pcwalton/signpost)" = "<none>"
 "checksum user32-sys 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "4ef4711d107b21b410a3a974b1204d9accc8b10dad75d8324b5d755de1617d47"
 "checksum winapi 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)" = "167dc9d6949a9b857f3451275e911c3f44255842c1f7a76f33c55103a909087a"
 "checksum winapi-build 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "2d315eee3b34aca4797b2da6b13ed88266e6d612562a0c46390af8299fc699bc"
