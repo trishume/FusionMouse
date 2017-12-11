@@ -83,10 +83,8 @@ fn run_pipeline(rx: Receiver<Input>) {
         let (display_width, display_height) = Enigo::main_display_size();
 
         // compute pipeline results ===================
-        let mut rounded_move = vec2(0i32, 0i32);
         if tick_head {
             let dt = calc_dt(tick, &mut last_head_tick);
-            // println!("dt: {}", dt);
             let smoothed_head = head_filter.filter(raw_head_pose, dt);
             // let smoothed_head = raw_head_pose;
 
@@ -117,9 +115,6 @@ fn run_pipeline(rx: Receiver<Input>) {
             gaze_pt = fixation_filter.transform(px_gaze, dt);
             // println!("GAZE {:?}", gaze_pt);
         }
-
-        // do something ===============================
-        // enigo.mouse_move_to(gaze_pt.x as i32, gaze_pt.y as i32);
     }
 }
 

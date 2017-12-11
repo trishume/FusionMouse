@@ -6,6 +6,6 @@ authors = ["Tristan Hume <tristan@thume.ca>"]
 [dependencies]
 linuxtrack-sys = "1.0.1"
 cgmath = "0.15"
-enigo = {path="../enigo"}
-tobii-sys = {path="../tobii-sys"}
+enigo = {git="https://github.com/trishume/enigo"}
+tobii-sys = "0.1.0"
 signpost = {git="https://github.com/pcwalton/signpost"}
