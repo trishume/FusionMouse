@@ -2,7 +2,7 @@ use std::f32::consts::PI;
 use std::f32;
 use std::collections::VecDeque;
 
-use cgmath::{Vector2, vec2};
+use cgmath::{Vector2, vec2, InnerSpace, MetricSpace};
 
 pub struct LowPassFilter {
     first_time: bool,
@@ -193,5 +193,86 @@ impl FixationFilter {
             self.cur = pt;
         }
         self.cur
+    }
+}
+
+pub struct PolyMouseParams {
+    pub min_jump: f32,
+    pub speed_expand_factor: f32,
+    pub head_smoothing_factor: f32,
+    pub throw_thresh_speed: f32,
+    pub throw_speed: f32,
+    pub small_jump_factor: f32,
+}
+
+pub struct PolyMouseTransform {
+    params: PolyMouseParams,
+    throwing: bool,
+    smoothed_head_speed: f32,
+    last_jump_destination: Vector2<f32>,
+    x_round: AccumulatingRounder,
+    y_round: AccumulatingRounder,
+}
+
+impl PolyMouseTransform {
+    pub fn new(params: PolyMouseParams) -> Self {
+        PolyMouseTransform {
+            params,
+            throwing: false,
+            smoothed_head_speed: 0.0,
+            last_jump_destination: vec2(0.0, 0.0),
+            x_round: AccumulatingRounder::new(),
+            y_round: AccumulatingRounder::new(),
+        }
+    }
+
+    pub fn transform(&mut self,
+                     gaze_pt: Vector2<f32>,
+                     mouse_pt: Vector2<i32>,
+                     head_delta: Vector2<f32>,
+                     dt: f32)
+                     -> Vector2<i32> {
+        let mouse_pt_f = vec2(mouse_pt.x as f32, mouse_pt.y as f32);
+
+        // TODO this is accelerated speed, should the acceleration be after?
+        let head_speed = head_delta.magnitude() / dt;
+        // TODO the amount of smoothing isn't independent of dt
+        self.smoothed_head_speed = self.smoothed_head_speed *
+                                   (1.0 - self.params.head_smoothing_factor) +
+                                   head_speed * self.params.head_smoothing_factor;
+
+        // println!("{:?}", self.smoothed_head_speed);
+        if self.looking_far_away(gaze_pt, mouse_pt_f) &&
+           self.smoothed_head_speed > self.params.throw_thresh_speed {
+            self.throwing = true;
+        }
+
+        if self.throwing {
+            let throw_dist = self.params.throw_speed * dt;
+            let dirn = (gaze_pt - mouse_pt_f).normalize();
+
+            // check we're not jumping past the circle
+            let dest_f = if mouse_pt_f.distance(gaze_pt) > throw_dist + self.params.min_jump {
+                mouse_pt_f + dirn * throw_dist
+            } else {
+                self.last_jump_destination = gaze_pt;
+                self.throwing = false;
+                gaze_pt + dirn * (-self.params.min_jump)
+            };
+
+            vec2(dest_f.x as i32, dest_f.y as i32) // TODO round?
+        } else {
+            let rounded_move = vec2(self.x_round.round(head_delta.x),
+                                    self.y_round.round(head_delta.y));
+            mouse_pt + rounded_move
+        }
+    }
+
+    fn looking_far_away(&self, gaze_pt: Vector2<f32>, mouse_pt: Vector2<f32>) -> bool {
+        let jump_radius = self.params.min_jump +
+                          self.smoothed_head_speed * self.params.speed_expand_factor;
+        let small_jump = jump_radius * self.params.small_jump_factor;
+        mouse_pt.distance(gaze_pt) > jump_radius &&
+        self.last_jump_destination.distance(gaze_pt) > small_jump
     }
 }

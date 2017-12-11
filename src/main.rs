@@ -15,9 +15,10 @@ use enigo::{Enigo, MouseControllable};
 use std::sync::mpsc::Receiver;
 use std::time::Instant;
 use std::mem;
+use std::cmp::{min, max};
 
 use inputs::{InputPool, Input};
-use transforms::{VecOneEuroFilter, Acceleration, AccumulatingRounder, FixationFilter};
+use transforms::*;
 
 fn calc_dt(tick: Instant, last_tick: &mut Instant) -> f32 {
     let dur = tick.duration_since(*last_tick);
@@ -36,6 +37,14 @@ fn run_pipeline(rx: Receiver<Input>) {
         lambda: 1000.0, // slope of curve at inflection point
         ratio: 0.7, // where inflection lies between v_min and v_max
     };
+    let polymouse_params = PolyMouseParams {
+        min_jump: 100.0,
+        speed_expand_factor: 0.0, // TODO translate delta->speed
+        head_smoothing_factor: 1.0, // TODO tune for dt
+        throw_thresh_speed: 300.0, // pixels per second
+        throw_speed: 8000.0, // pixels per second
+        small_jump_factor: 0.75,
+    };
 
     // input state
     let mut raw_head_pose: Vector2<f32> = vec2(0.0, 0.0);
@@ -47,8 +56,7 @@ fn run_pipeline(rx: Receiver<Input>) {
     let mut head_filter = VecOneEuroFilter::new(6.0, 1000.0, 1.0);
     let mut last_head_pose: Option<Vector2<f32>> = None;
 
-    let mut x_round = AccumulatingRounder::new();
-    let mut y_round = AccumulatingRounder::new();
+    let mut poly_mouse = PolyMouseTransform::new(polymouse_params);
 
     let mut fixation_filter = FixationFilter::new(0.03, 150.0);
     let mut gaze_pt: Vector2<f32> = vec2(0.0, 0.0);
@@ -69,9 +77,10 @@ fn run_pipeline(rx: Receiver<Input>) {
                 tick_gaze = true;
             }
         }
+        let _signpost = signpost::AutoTrace::new(1, &[0, 0, 0, signpost::Color::Blue as usize]);
 
         let tick = Instant::now();
-        let _signpost = signpost::AutoTrace::new(1, &[0, 0, 0, signpost::Color::Blue as usize]);
+        let (display_width, display_height) = Enigo::main_display_size();
 
         // compute pipeline results ===================
         let mut rounded_move = vec2(0i32, 0i32);
@@ -90,13 +99,19 @@ fn run_pipeline(rx: Receiver<Input>) {
             let head_cursor_move = vec2(accel.transform(head_delta.x, dt),
                                         accel.transform(head_delta.y, dt));
 
-            rounded_move = vec2(x_round.round(head_cursor_move.x),
-                                y_round.round(head_cursor_move.y));
+            let (mouse_x, mouse_y) = Enigo::mouse_location();
+            let mouse_pt = vec2(mouse_x, mouse_y);
+            let dest = poly_mouse.transform(gaze_pt, mouse_pt, head_cursor_move, dt);
+            let confined = vec2(max(0, min(display_width as i32, dest.x)),
+                                max(0, min(display_height as i32, dest.y)));
+
+            if confined != mouse_pt {
+                enigo.mouse_move_to(confined.x, confined.y);
+            }
         }
 
         if tick_gaze {
             let dt = calc_dt(tick, &mut last_gaze_tick);
-            let (display_width, display_height) = Enigo::main_display_size();
             let px_gaze = vec2(raw_gaze.x * (display_width as f32),
                                raw_gaze.y * (display_height as f32));
             gaze_pt = fixation_filter.transform(px_gaze, dt);
@@ -104,9 +119,6 @@ fn run_pipeline(rx: Receiver<Input>) {
         }
 
         // do something ===============================
-        if rounded_move.x.abs() > 0 || rounded_move.y.abs() > 0 {
-            enigo.mouse_move_relative(rounded_move.x, rounded_move.y);
-        }
         // enigo.mouse_move_to(gaze_pt.x as i32, gaze_pt.y as i32);
     }
 }
