@@ -39,7 +39,11 @@ impl InputPool {
         let (tx, rx) = mpsc::channel::<InputAction>();
         let sender = self.sender.clone();
         let handle = thread::spawn(|| f(sender, rx));
-        self.threads.push(InputThread { inbox: tx, handle: Some(handle) });
+        self.threads
+            .push(InputThread {
+                      inbox: tx,
+                      handle: Some(handle),
+                  });
     }
 }
 

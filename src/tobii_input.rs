@@ -15,36 +15,46 @@ struct CallbackContext {
     output: SyncSender<Input>,
 }
 
-unsafe extern "C"
-fn custom_log_fn(_log_context: *mut ::std::os::raw::c_void, level: LogLevel, text: *const raw::c_char) {
-    if level > TOBII_LOG_LEVEL_WARN { return; }
+unsafe extern "C" fn custom_log_fn(_log_context: *mut ::std::os::raw::c_void,
+                                   level: LogLevel,
+                                   text: *const raw::c_char) {
+    if level > TOBII_LOG_LEVEL_WARN {
+        return;
+    }
     let s = CStr::from_ptr(text);
     println!("LOG {}: {}", level, s.to_str().unwrap());
 }
 
-unsafe extern "C"
-fn gaze_callback(gaze_point: *const GazePoint, user_data: *mut ::std::os::raw::c_void) {
-    assert_ne!(user_data,ptr::null_mut());
+unsafe extern "C" fn gaze_callback(gaze_point: *const GazePoint,
+                                   user_data: *mut ::std::os::raw::c_void) {
+    assert_ne!(user_data, ptr::null_mut());
     let context = &*(user_data as *mut CallbackContext);
     let pt = &*gaze_point;
     if pt.validity != TOBII_VALIDITY_VALID {
         println!("INVALID {}", pt.timestamp_us);
         return;
     }
-    let event = Input::TobiiGaze { x: pt.position_xy[0], y: pt.position_xy[1]};
-    signpost::trace(2, &[0,0,0, signpost::Color::Red as usize]);
+    let event = Input::TobiiGaze {
+        x: pt.position_xy[0],
+        y: pt.position_xy[1],
+    };
+    signpost::trace(2, &[0, 0, 0, signpost::Color::Red as usize]);
     context.output.send(event).unwrap();
 }
 
-unsafe fn input_loop(output: SyncSender<Input>, inbox: Receiver<InputAction>) -> Result<(), TobiiError> {
+unsafe fn input_loop(output: SyncSender<Input>,
+                     inbox: Receiver<InputAction>)
+                     -> Result<(), TobiiError> {
     let custom_log = CustomLog {
         log_context: ptr::null_mut(),
-        log_func: Some(custom_log_fn)
+        log_func: Some(custom_log_fn),
     };
 
     println!("Initializing API!");
     let mut api_ptr: *mut Api = mem::zeroed();
-    let status = tobii_api_create( &mut api_ptr as *mut *mut Api, ptr::null_mut(), &custom_log as *const _);
+    let status = tobii_api_create(&mut api_ptr as *mut *mut Api,
+                                  ptr::null_mut(),
+                                  &custom_log as *const _);
     status_to_result(status)?;
     let api = PtrWrapper::new(api_ptr, tobii_api_destroy);
 
@@ -59,13 +69,18 @@ unsafe fn input_loop(output: SyncSender<Input>, inbox: Receiver<InputAction>) ->
     let url_c_string = CString::new(devices[0].clone()).unwrap();
     let url_c = url_c_string.as_c_str();
     let mut device_ptr: *mut Device = mem::zeroed();
-    let status = tobii_device_create(api.ptr(), url_c.as_ptr(), &mut device_ptr as *mut *mut Device);
+    let status = tobii_device_create(api.ptr(),
+                                     url_c.as_ptr(),
+                                     &mut device_ptr as *mut *mut Device);
     status_to_result(status)?;
     let device = PtrWrapper::new(device_ptr, tobii_device_destroy);
 
-    let mut context = Box::new(CallbackContext {output});
+    let mut context = Box::new(CallbackContext { output });
     let context_borrow = context.as_mut();
-    let status = tobii_gaze_point_subscribe(device.ptr(), Some(gaze_callback), (context_borrow as *mut CallbackContext) as *mut raw::c_void);
+    let status = tobii_gaze_point_subscribe(device.ptr(),
+                                            Some(gaze_callback),
+                                            (context_borrow as *mut CallbackContext) as
+                                            *mut raw::c_void);
     let _subscription = PtrWrapper::new(device.ptr(), tobii_gaze_point_unsubscribe);
     status_to_result(status)?;
 
@@ -81,7 +96,7 @@ unsafe fn input_loop(output: SyncSender<Input>, inbox: Receiver<InputAction>) ->
             Err(TobiiError::ConnectionFailed) => {
                 status_to_result(helpers::reconnect(device.ptr()))?;
                 continue;
-            },
+            }
             Err(e) => return Err(e),
             Ok(()) => (),
         }

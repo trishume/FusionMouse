@@ -38,8 +38,8 @@ fn run_pipeline(rx: Receiver<Input>) {
     };
 
     // input state
-    let mut raw_head_pose: Vector2<f32> = vec2(0.0,0.0);
-    let mut raw_gaze: Vector2<f32> = vec2(0.0,0.0);
+    let mut raw_head_pose: Vector2<f32> = vec2(0.0, 0.0);
+    let mut raw_gaze: Vector2<f32> = vec2(0.0, 0.0);
 
     // pipeline state
     let mut last_head_tick = Instant::now();
@@ -51,6 +51,7 @@ fn run_pipeline(rx: Receiver<Input>) {
     let mut y_round = AccumulatingRounder::new();
 
     let mut fixation_filter = FixationFilter::new(0.03, 150.0);
+    let mut gaze_pt: Vector2<f32> = vec2(0.0, 0.0);
 
     let mut enigo = Enigo::new();
 
@@ -60,20 +61,20 @@ fn run_pipeline(rx: Receiver<Input>) {
         let mut tick_head = false;
         match rx.recv().unwrap() {
             Input::LinuxTrackHead { yaw, pitch } => {
-                raw_head_pose = vec2(yaw, pitch)*-1.0;
+                raw_head_pose = vec2(yaw, pitch) * -1.0;
                 tick_head = true;
-            },
+            }
             Input::TobiiGaze { x, y } => {
-                raw_gaze = vec2(x,y);
+                raw_gaze = vec2(x, y);
                 tick_gaze = true;
             }
         }
 
         let tick = Instant::now();
-        let _signpost = signpost::AutoTrace::new(1, &[0,0,0, signpost::Color::Blue as usize]);
+        let _signpost = signpost::AutoTrace::new(1, &[0, 0, 0, signpost::Color::Blue as usize]);
 
         // compute pipeline results ===================
-        let mut rounded_move = vec2(0i32,0i32);
+        let mut rounded_move = vec2(0i32, 0i32);
         if tick_head {
             let dt = calc_dt(tick, &mut last_head_tick);
             // println!("dt: {}", dt);
@@ -82,34 +83,31 @@ fn run_pipeline(rx: Receiver<Input>) {
 
             let head_delta = match last_head_pose {
                 Some(last_pose) => smoothed_head - last_pose,
-                None => vec2(0.0,0.0),
+                None => vec2(0.0, 0.0),
             };
             last_head_pose = Some(smoothed_head);
 
-            let head_cursor_move = vec2(
-                accel.transform(head_delta.x, dt),
-                accel.transform(head_delta.y, dt)
-            );
+            let head_cursor_move = vec2(accel.transform(head_delta.x, dt),
+                                        accel.transform(head_delta.y, dt));
 
-            rounded_move = vec2(
-                x_round.round(head_cursor_move.x),
-                y_round.round(head_cursor_move.y),
-            );
+            rounded_move = vec2(x_round.round(head_cursor_move.x),
+                                y_round.round(head_cursor_move.y));
         }
 
         if tick_gaze {
             let dt = calc_dt(tick, &mut last_gaze_tick);
             let (display_width, display_height) = Enigo::main_display_size();
-            let px_gaze = vec2(raw_gaze.x * (display_width as f32), raw_gaze.y * (display_height as f32));
-            let fixation = fixation_filter.transform(px_gaze, dt);
-            // println!("GAZE {:?}", fixation);
+            let px_gaze = vec2(raw_gaze.x * (display_width as f32),
+                               raw_gaze.y * (display_height as f32));
+            gaze_pt = fixation_filter.transform(px_gaze, dt);
+            // println!("GAZE {:?}", gaze_pt);
         }
 
         // do something ===============================
         if rounded_move.x.abs() > 0 || rounded_move.y.abs() > 0 {
             enigo.mouse_move_relative(rounded_move.x, rounded_move.y);
         }
-        // enigo.mouse_move_to(fixation_filter.cur.x as i32, fixation_filter.cur.y as i32);
+        // enigo.mouse_move_to(gaze_pt.x as i32, gaze_pt.y as i32);
     }
 }
 

@@ -16,7 +16,7 @@ unsafe fn get_one_pose() -> Result<Pose, Status> {
         println!("Status: {:?}", status);
         return Err(status);
     }
-    signpost::start(3, &[0,0,0, signpost::Color::Green as usize]);
+    signpost::start(3, &[0, 0, 0, signpost::Color::Green as usize]);
 
     let mut pose: Pose = mem::zeroed();
     let mut blobs: [f32; 9] = [0.0; 9];
@@ -55,7 +55,7 @@ unsafe fn input_loop(output: SyncSender<Input>, inbox: Receiver<InputAction>) {
         output
             .send(input)
             .expect("shutdown should come before channel close");
-        signpost::end(3, &[0,0,0, signpost::Color::Green as usize]);
+        signpost::end(3, &[0, 0, 0, signpost::Color::Green as usize]);
     }
 }
 
