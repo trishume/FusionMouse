@@ -9,3 +9,5 @@ cgmath = "0.15"
 enigo = {git="https://github.com/trishume/enigo"}
 tobii-sys = "0.1.0"
 signpost = {git="https://github.com/pcwalton/signpost"}
+kiss3d = "0.11"
+nalgebra = "0.13"

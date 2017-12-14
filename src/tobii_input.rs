@@ -28,7 +28,7 @@ unsafe extern "C" fn custom_log_fn(_log_context: *mut ::std::os::raw::c_void,
 unsafe extern "C" fn gaze_callback(gaze_point: *const GazePoint,
                                    user_data: *mut ::std::os::raw::c_void) {
     assert_ne!(user_data, ptr::null_mut());
-    let context = &*(user_data as *mut CallbackContext);
+    let context = &*(user_data as *const CallbackContext);
     let pt = &*gaze_point;
     if pt.validity != TOBII_VALIDITY_VALID {
         println!("INVALID {}", pt.timestamp_us);
@@ -39,6 +39,18 @@ unsafe extern "C" fn gaze_callback(gaze_point: *const GazePoint,
         y: pt.position_xy[1],
     };
     signpost::trace(2, &[0, 0, 0, signpost::Color::Red as usize]);
+    context.output.send(event).unwrap();
+}
+
+unsafe extern "C" fn gaze_origin_callback(gaze_origin: *const GazeOrigin,
+                                   user_data: *mut ::std::os::raw::c_void) {
+    assert_ne!(user_data, ptr::null_mut());
+    let context = &*(user_data as *const CallbackContext);
+    let pt = &*gaze_origin;
+    let event = Input::TobiiEyePosition {
+        left_xyz: pt.left_xyz.clone(),
+        right_xyz: pt.right_xyz.clone(),
+    };
     context.output.send(event).unwrap();
 }
 
@@ -77,11 +89,19 @@ unsafe fn input_loop(output: SyncSender<Input>,
 
     let mut context = Box::new(CallbackContext { output });
     let context_borrow = context.as_mut();
+
     let status = tobii_gaze_point_subscribe(device.ptr(),
                                             Some(gaze_callback),
                                             (context_borrow as *mut CallbackContext) as
                                             *mut raw::c_void);
     let _subscription = PtrWrapper::new(device.ptr(), tobii_gaze_point_unsubscribe);
+    status_to_result(status)?;
+
+    let status = tobii_gaze_origin_subscribe(device.ptr(),
+                                            Some(gaze_origin_callback),
+                                            (context_borrow as *mut CallbackContext) as
+                                            *mut raw::c_void);
+    let _subscription2 = PtrWrapper::new(device.ptr(), tobii_gaze_origin_unsubscribe);
     status_to_result(status)?;
 
     loop {

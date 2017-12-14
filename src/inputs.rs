@@ -1,9 +1,14 @@
 use std::sync::mpsc;
 use std::thread;
 
+#[derive(Clone,Debug)]
 pub enum Input {
-    LinuxTrackHead { yaw: f32, pitch: f32 },
+    LinuxTrackHead { yaw: f32, pitch: f32, roll: f32, tx: f32, ty: f32, tz: f32 },
     TobiiGaze { x: f32, y: f32 },
+    TobiiEyePosition {
+        left_xyz: [f32; 3],
+        right_xyz: [f32; 3],
+    }
 }
 
 pub enum InputAction {
@@ -24,7 +29,7 @@ pub struct InputPool {
 
 impl InputPool {
     pub fn new() -> (InputPool, mpsc::Receiver<Input>) {
-        let (tx, rx) = mpsc::sync_channel::<Input>(0); // TODO choose best constant
+        let (tx, rx) = mpsc::sync_channel::<Input>(50); // TODO choose best constant
         let pool = InputPool {
             threads: vec![],
             sender: tx,

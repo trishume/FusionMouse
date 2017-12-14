@@ -51,6 +51,10 @@ unsafe fn input_loop(output: SyncSender<Input>, inbox: Receiver<InputAction>) {
         let input = Input::LinuxTrackHead {
             yaw: pose.raw_yaw,
             pitch: pose.raw_pitch,
+            roll: pose.raw_roll,
+            tx: pose.raw_tx,
+            ty: pose.raw_ty,
+            tz: pose.raw_tz,
         };
         output
             .send(input)

@@ -3,11 +3,14 @@ extern crate tobii_sys;
 extern crate cgmath;
 extern crate enigo;
 extern crate signpost;
+extern crate kiss3d;
+extern crate nalgebra as na;
 
 mod inputs;
 mod ltr_input;
 mod tobii_input;
 mod transforms;
+mod viz_3d;
 
 use cgmath::{vec2, Vector2};
 use enigo::{Enigo, MouseControllable};
@@ -68,7 +71,7 @@ fn run_pipeline(rx: Receiver<Input>) {
         let mut tick_gaze = false;
         let mut tick_head = false;
         match rx.recv().unwrap() {
-            Input::LinuxTrackHead { yaw, pitch } => {
+            Input::LinuxTrackHead { yaw, pitch, .. } => {
                 raw_head_pose = vec2(yaw, pitch) * -1.0;
                 tick_head = true;
             }
@@ -76,6 +79,7 @@ fn run_pipeline(rx: Receiver<Input>) {
                 raw_gaze = vec2(x, y);
                 tick_gaze = true;
             }
+            Input::TobiiEyePosition { .. } => (),
         }
         let _signpost = signpost::AutoTrace::new(1, &[0, 0, 0, signpost::Color::Blue as usize]);
 
@@ -123,5 +127,6 @@ fn main() {
     let (mut pool, rx) = InputPool::new();
     pool.spawn(ltr_input::listen);
     pool.spawn(tobii_input::listen);
-    run_pipeline(rx);
+    viz_3d::run(rx);
+    // run_pipeline(rx);
 }
