@@ -4,6 +4,7 @@ use std::thread;
 pub enum Input {
     LinuxTrackHead { yaw: f32, pitch: f32 },
     TobiiGaze { x: f32, y: f32 },
+    Shutdown,
 }
 
 pub enum InputAction {
@@ -58,5 +59,7 @@ impl Drop for InputPool {
                 handle.join().unwrap();
             }
         }
+
+        self.sender.send(Input::Shutdown).unwrap();
     }
 }

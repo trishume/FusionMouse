@@ -4,10 +4,18 @@ extern crate cgmath;
 extern crate enigo;
 extern crate signpost;
 
+extern crate graphics;
+extern crate glium_graphics;
+extern crate piston;
+extern crate glutin;
+extern crate cocoa;
+extern crate objc;
+
 mod inputs;
 mod ltr_input;
 mod tobii_input;
 mod transforms;
+mod viz_2d;
 
 use cgmath::{vec2, Vector2};
 use enigo::{Enigo, MouseControllable};
@@ -16,6 +24,7 @@ use std::sync::mpsc::Receiver;
 use std::time::Instant;
 use std::mem;
 use std::cmp::{min, max};
+use std::thread;
 
 use inputs::{InputPool, Input};
 use transforms::*;
@@ -76,6 +85,7 @@ fn run_pipeline(rx: Receiver<Input>) {
                 raw_gaze = vec2(x, y);
                 tick_gaze = true;
             }
+            Input::Shutdown => break,
         }
         let _signpost = signpost::AutoTrace::new(1, &[0, 0, 0, signpost::Color::Blue as usize]);
 
@@ -123,5 +133,8 @@ fn main() {
     let (mut pool, rx) = InputPool::new();
     pool.spawn(ltr_input::listen);
     pool.spawn(tobii_input::listen);
-    run_pipeline(rx);
+    let handle = thread::spawn(|| run_pipeline(rx));
+    viz_2d::run();
+    mem::drop(pool);
+    handle.join().unwrap();
 }
