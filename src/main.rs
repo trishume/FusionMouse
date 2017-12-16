@@ -4,10 +4,8 @@ extern crate cgmath;
 extern crate enigo;
 extern crate signpost;
 
-extern crate graphics;
-extern crate glium_graphics;
-extern crate piston;
-extern crate glutin;
+#[macro_use]
+extern crate glium;
 extern crate cocoa;
 extern crate objc;
 
