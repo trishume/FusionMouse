@@ -26,6 +26,7 @@ use std::thread;
 
 use inputs::{InputPool, Input};
 use transforms::*;
+use viz_2d::{DebugSender,DebugWindow,DebugFrame};
 
 fn calc_dt(tick: Instant, last_tick: &mut Instant) -> f32 {
     let dur = tick.duration_since(*last_tick);
@@ -34,7 +35,7 @@ fn calc_dt(tick: Instant, last_tick: &mut Instant) -> f32 {
     dt
 }
 
-fn run_pipeline(rx: Receiver<Input>) {
+fn run_pipeline(rx: Receiver<Input>, debug: DebugSender) {
     // configuration
     let accel = Acceleration {
         cd_min: 8.0, // min gain
@@ -114,6 +115,13 @@ fn run_pipeline(rx: Receiver<Input>) {
             if confined != mouse_pt {
                 enigo.mouse_move_to(confined.x, confined.y);
             }
+
+            let debug_frame = DebugFrame {
+                pt: gaze_pt,
+                display_width: display_width as f32,
+                display_height: display_height as f32,
+            };
+            debug.send(debug_frame);
         }
 
         if tick_gaze {
@@ -131,8 +139,12 @@ fn main() {
     let (mut pool, rx) = InputPool::new();
     pool.spawn(ltr_input::listen);
     pool.spawn(tobii_input::listen);
-    let handle = thread::spawn(|| run_pipeline(rx));
-    viz_2d::run();
+    let (debug_view, debug_sender) = DebugWindow::new();
+
+    let handle = thread::spawn(|| run_pipeline(rx, debug_sender));
+
+    debug_view.run();
+
     mem::drop(pool);
     handle.join().unwrap();
 }
