@@ -26,7 +26,7 @@ use std::thread;
 
 use inputs::{InputPool, Input};
 use transforms::*;
-use viz_2d::{DebugSender,DebugWindow,DebugFrame};
+use viz_2d::{DebugSender, DebugWindow, DebugFrame};
 
 fn calc_dt(tick: Instant, last_tick: &mut Instant) -> f32 {
     let dur = tick.duration_since(*last_tick);
@@ -68,6 +68,7 @@ fn run_pipeline(rx: Receiver<Input>, debug: DebugSender) {
 
     let mut fixation_filter = FixationFilter::new(0.03, 150.0);
     let mut gaze_pt: Vector2<f32> = vec2(0.0, 0.0);
+    let mut px_gaze: Vector2<f32> = vec2(0.0, 0.0);
 
     let mut enigo = Enigo::new();
 
@@ -116,18 +117,21 @@ fn run_pipeline(rx: Receiver<Input>, debug: DebugSender) {
                 enigo.mouse_move_to(confined.x, confined.y);
             }
 
-            let debug_frame = DebugFrame {
-                pt: gaze_pt,
+            let mut debug_frame = DebugFrame {
+                points: Vec::with_capacity(4),
                 display_width: display_width as f32,
                 display_height: display_height as f32,
             };
+            // debug_frame.add_point(vec2(dest.x as f32, dest.y as f32), [0.0, 1.0, 0.0]);
+            debug_frame.add_point(gaze_pt, [1.0, 0.0, 0.0]);
+            debug_frame.add_point(px_gaze, [1.0, 0.0, 1.0]);
             debug.send(debug_frame);
         }
 
         if tick_gaze {
             let dt = calc_dt(tick, &mut last_gaze_tick);
-            let px_gaze = vec2(raw_gaze.x * (display_width as f32),
-                               raw_gaze.y * (display_height as f32));
+            px_gaze = vec2(raw_gaze.x * (display_width as f32),
+                           raw_gaze.y * (display_height as f32));
             gaze_pt = fixation_filter.transform(px_gaze, dt);
             // println!("GAZE {:?}", gaze_pt);
         }
