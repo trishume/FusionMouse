@@ -10,6 +10,10 @@ enigo = {git="https://github.com/trishume/enigo"}
 tobii-sys = "0.1.0"
 signpost = {git="https://github.com/pcwalton/signpost"}
 
-glium = "0.19.0"
-cocoa = "0.11.0"
-objc = "0.2.2"
+glium = { version = "0.19.0", optional = true }
+cocoa = { version = "0.11.0", optional = true }
+objc = { version = "0.2.2", optional = true }
+
+[features]
+
+viz-2d = ["glium","cocoa", "objc"]

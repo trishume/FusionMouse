@@ -31,7 +31,7 @@ unsafe extern "C" fn gaze_callback(gaze_point: *const GazePoint,
     let context = &*(user_data as *mut CallbackContext);
     let pt = &*gaze_point;
     if pt.validity != TOBII_VALIDITY_VALID {
-        println!("INVALID {}", pt.timestamp_us);
+        // println!("INVALID {}", pt.timestamp_us);
         return;
     }
     let event = Input::TobiiGaze {

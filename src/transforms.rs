@@ -161,9 +161,7 @@ impl FixationFilter {
         }
         let mut to_sample = (self.min_fixation_s / dt).round() as usize;
         if to_sample > len {
-            println!("Warning: need {:?} fixation samples but only have {}",
-                     to_sample,
-                     len);
+            // println!("Warning: need {:?} fixation samples but only have {}", to_sample, len);
             to_sample = len;
         }
 

@@ -4,16 +4,25 @@ extern crate cgmath;
 extern crate enigo;
 extern crate signpost;
 
+#[cfg(feature = "viz-2d")]
 #[macro_use]
 extern crate glium;
+#[cfg(feature = "viz-2d")]
 extern crate cocoa;
+#[cfg(feature = "viz-2d")]
 extern crate objc;
 
 mod inputs;
 mod ltr_input;
 mod tobii_input;
 mod transforms;
+
+#[cfg(feature = "viz-2d")]
 mod viz_2d;
+#[cfg(feature = "viz-2d")]
+use viz_2d::{DebugSender, DebugWindow, DebugFrame, DebugPoint};
+#[cfg(not(feature = "viz-2d"))]
+struct DebugSender();
 
 use cgmath::{vec2, Vector2};
 use enigo::{Enigo, MouseControllable};
@@ -26,7 +35,6 @@ use std::thread;
 
 use inputs::{InputPool, Input};
 use transforms::*;
-use viz_2d::{DebugSender, DebugWindow, DebugFrame, DebugPoint};
 
 fn calc_dt(tick: Instant, last_tick: &mut Instant) -> f32 {
     let dur = tick.duration_since(*last_tick);
@@ -118,26 +126,31 @@ fn run_pipeline(rx: Receiver<Input>, debug: DebugSender) {
             }
 
             // debugging =====================
-            let mut debug_frame = DebugFrame {
-                points: Vec::with_capacity(4),
-                display_width: display_width as f32,
-                display_height: display_height as f32,
-            };
-            let circle = DebugPoint {
-                offset: [dest.x as f32, dest.y as f32],
-                color: [0.0, 1.0, 0.0],
-                size: polymouse_params.min_jump*2.0,
-            };
-            debug_frame.points.push(circle);
-            let circle2 = DebugPoint {
-                offset: poly_mouse.last_jump_destination.into(),
-                color: [0.0, 1.0, 0.0],
-                size: polymouse_params.min_jump*polymouse_params.small_jump_factor*2.0,
-            };
-            debug_frame.points.push(circle2);
-            debug_frame.add_point(gaze_pt, [1.0, 0.0, 0.0]);
-            debug_frame.add_point(px_gaze, [1.0, 0.0, 1.0]);
-            debug.send(debug_frame);
+            #[cfg(feature = "viz-2d")]
+            {
+                let mut debug_frame = DebugFrame {
+                    points: Vec::with_capacity(4),
+                    display_width: display_width as f32,
+                    display_height: display_height as f32,
+                };
+                let circle = DebugPoint {
+                    offset: [dest.x as f32, dest.y as f32],
+                    color: [0.0, 1.0, 0.0],
+                    size: polymouse_params.min_jump*2.0,
+                };
+                debug_frame.points.push(circle);
+                let circle2 = DebugPoint {
+                    offset: poly_mouse.last_jump_destination.into(),
+                    color: [0.0, 1.0, 0.0],
+                    size: polymouse_params.min_jump*polymouse_params.small_jump_factor*2.0,
+                };
+                debug_frame.points.push(circle2);
+                debug_frame.add_point(gaze_pt, [1.0, 0.0, 0.0]);
+                debug_frame.add_point(px_gaze, [1.0, 0.0, 1.0]);
+                debug.send(debug_frame);
+            }
+            #[cfg(not(feature = "viz-2d"))]
+            let _silence_warnings = (&px_gaze, &debug);
         }
 
         if tick_gaze {
@@ -155,12 +168,19 @@ fn main() {
     let (mut pool, rx) = InputPool::new();
     pool.spawn(ltr_input::listen);
     pool.spawn(tobii_input::listen);
+
+    #[cfg(feature = "viz-2d")]
     let (debug_view, debug_sender) = DebugWindow::new();
+    #[cfg(not(feature = "viz-2d"))]
+    let debug_sender = DebugSender();
 
     let handle = thread::spawn(|| run_pipeline(rx, debug_sender));
 
-    debug_view.run();
+    #[cfg(feature = "viz-2d")]
+    {
+        debug_view.run();
+        mem::drop(pool);
+    }
 
-    mem::drop(pool);
     handle.join().unwrap();
 }
