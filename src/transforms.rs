@@ -196,6 +196,7 @@ impl FixationFilter {
     }
 }
 
+#[derive(Clone)]
 pub struct PolyMouseParams {
     pub min_jump: f32,
     pub speed_expand_factor: f32,
@@ -209,7 +210,7 @@ pub struct PolyMouseTransform {
     params: PolyMouseParams,
     throwing: bool,
     smoothed_head_speed: f32,
-    last_jump_destination: Vector2<f32>,
+    pub last_jump_destination: Vector2<f32>,
     x_round: AccumulatingRounder,
     y_round: AccumulatingRounder,
 }

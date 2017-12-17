@@ -26,7 +26,7 @@ use std::thread;
 
 use inputs::{InputPool, Input};
 use transforms::*;
-use viz_2d::{DebugSender, DebugWindow, DebugFrame};
+use viz_2d::{DebugSender, DebugWindow, DebugFrame, DebugPoint};
 
 fn calc_dt(tick: Instant, last_tick: &mut Instant) -> f32 {
     let dur = tick.duration_since(*last_tick);
@@ -64,7 +64,7 @@ fn run_pipeline(rx: Receiver<Input>, debug: DebugSender) {
     let mut head_filter = VecOneEuroFilter::new(6.0, 1000.0, 1.0);
     let mut last_head_pose: Option<Vector2<f32>> = None;
 
-    let mut poly_mouse = PolyMouseTransform::new(polymouse_params);
+    let mut poly_mouse = PolyMouseTransform::new(polymouse_params.clone());
 
     let mut fixation_filter = FixationFilter::new(0.03, 150.0);
     let mut gaze_pt: Vector2<f32> = vec2(0.0, 0.0);
@@ -117,12 +117,24 @@ fn run_pipeline(rx: Receiver<Input>, debug: DebugSender) {
                 enigo.mouse_move_to(confined.x, confined.y);
             }
 
+            // debugging =====================
             let mut debug_frame = DebugFrame {
                 points: Vec::with_capacity(4),
                 display_width: display_width as f32,
                 display_height: display_height as f32,
             };
-            // debug_frame.add_point(vec2(dest.x as f32, dest.y as f32), [0.0, 1.0, 0.0]);
+            let circle = DebugPoint {
+                offset: [dest.x as f32, dest.y as f32],
+                color: [0.0, 1.0, 0.0],
+                size: polymouse_params.min_jump*2.0,
+            };
+            debug_frame.points.push(circle);
+            let circle2 = DebugPoint {
+                offset: poly_mouse.last_jump_destination.into(),
+                color: [0.0, 1.0, 0.0],
+                size: polymouse_params.min_jump*polymouse_params.small_jump_factor*2.0,
+            };
+            debug_frame.points.push(circle2);
             debug_frame.add_point(gaze_pt, [1.0, 0.0, 0.0]);
             debug_frame.add_point(px_gaze, [1.0, 0.0, 1.0]);
             debug.send(debug_frame);

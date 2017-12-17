@@ -3,7 +3,6 @@ use std::sync::mpsc;
 use cgmath::{self, Vector2};
 
 use glium::{self, glutin, Surface};
-use glium::index::PrimitiveType;
 use glium::glutin::os::macos::WindowExt;
 
 use objc::runtime::{YES, NO};
@@ -27,8 +26,9 @@ unsafe fn make_fullscreen_overlay(window: &glutin::GlWindow) {
 pub struct DebugPoint {
     pub offset: [f32; 2],
     pub color: [f32; 3],
+    pub size: f32,
 }
-implement_vertex!(DebugPoint, offset, color);
+implement_vertex!(DebugPoint, offset, color, size);
 
 pub struct DebugFrame {
     pub points: Vec<DebugPoint>,
@@ -38,11 +38,12 @@ pub struct DebugFrame {
 
 impl DebugFrame {
     pub fn add_point(&mut self, pt: Vector2<f32>, color: [f32; 3]) {
-        self.points
-            .push(DebugPoint {
-                      offset: pt.into(),
-                      color,
-                  });
+        let pt = DebugPoint {
+            offset: pt.into(),
+            color,
+            size: 10.0,
+        };
+        self.points.push(pt);
     }
 }
 
@@ -99,16 +100,19 @@ impl DebugWindow {
 
             implement_vertex!(Vertex, position);
 
-            glium::VertexBuffer::new(&display,
-                                     &[Vertex { position: [-0.5, -0.5] },
-                                      Vertex { position: [0.0, 0.5] },
-                                      Vertex { position: [0.5, -0.5] }])
-                    .unwrap()
+            let verts = &[
+                Vertex { position: [-0.5, -0.5] },
+                Vertex { position: [-0.5, 0.5] },
+                Vertex { position: [0.5, 0.5] },
+                Vertex { position: [0.5, 0.5] },
+                Vertex { position: [0.5, -0.5] },
+                Vertex { position: [-0.5, -0.5] },
+            ];
+            glium::VertexBuffer::new(&display, verts).unwrap()
         };
 
         // building the index buffer
-        let index_buffer =
-            glium::IndexBuffer::new(&display, PrimitiveType::TrianglesList, &[0u16, 1, 2]).unwrap();
+        let index_buffer = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
 
         // compiling shaders and linking them together
         let program = program!(&display,
@@ -116,22 +120,34 @@ impl DebugWindow {
                 vertex: "
                     #version 140
                     uniform mat4 matrix;
-                    in vec2 offset;
                     in vec2 position;
+
+                    in vec2 offset;
                     in vec3 color;
+                    in float size;
+
                     flat out vec3 vColor;
+                    flat out float vSize;
+                    out vec2 vPosition;
                     void main() {
-                        gl_Position = matrix * vec4(position*10.0 + offset, 0.0, 1.0);
+                        gl_Position = matrix * vec4(position*size + offset, 0.0, 1.0);
                         vColor = color;
+                        vPosition = position;
+                        vSize = size;
                     }
                 ",
 
                 fragment: "
                     #version 140
                     flat in vec3 vColor;
+                    flat in float vSize;
+                    in vec2 vPosition;
                     out vec4 f_color;
                     void main() {
-                        f_color = vec4(vColor, 1.0);
+                        float dist = dot(vPosition,vPosition);
+                        if(dist > 0.25) discard;
+                        if(vSize > 15.0 && dist < 0.24) discard;
+                        f_color = vec4(vColor, 0.6);
                     }
                 "
             },
@@ -160,12 +176,16 @@ impl DebugWindow {
             // drawing a frame
             let mut target = display.draw();
             target.clear_color(0.0, 0.0, 0.0, 0.0);
+            let params = glium::DrawParameters {
+                blend: glium::Blend::alpha_blending(),
+                .. Default::default()
+            };
             target
                 .draw((&vertex_buffer, per_instance.per_instance().unwrap()),
                       &index_buffer,
                       &program,
                       &uniforms,
-                      &Default::default())
+                      &params)
                 .unwrap();
             target.finish().unwrap();
             signpost::end(4, &[0, 0, 0, signpost::Color::Purple as usize]);
@@ -185,6 +205,9 @@ impl DebugWindow {
             };
             events_loop.poll_events(handler);
 
+            // we consume as many frames as possible since otherwise we
+            // frequently fall behind since for no apparent reason sometimes
+            // frames take 10ms to render instead of 5ms.
             let mut cur_frame = rx.recv().unwrap();
             while let Ok(frame) = rx.try_recv() {
                 cur_frame = frame;
