@@ -4,6 +4,9 @@ use na::{Vector3, Translation3, Point3, UnitQuaternion};
 use std::sync::mpsc::Receiver;
 use inputs::Input;
 
+use std::fs::File;
+use std::io::Write;
+
 pub const DEG2RAD : f32 = (2.0*3.1415926)/360.0;
 
 pub fn run(rx: Receiver<Input>) {
@@ -27,6 +30,11 @@ pub fn run(rx: Receiver<Input>) {
 
     let mut init_point = None;
 
+    let mut data_f = File::create("data/data.csv").unwrap();
+    writeln!(&mut data_f, "yaw, pitch, roll, tx, ty, tz, left_x, left_y, left_z, right_x, right_y, right_z, gaze_x, gaze_y").unwrap();
+    let mut head_info = None;
+    let mut gaze_info = None;
+
     while window.render() {
         while let Ok(input) = rx.try_recv() {
             match input {
@@ -34,9 +42,11 @@ pub fn run(rx: Receiver<Input>) {
                     let head_offset = Translation3::new(tx / div, ty / div, tz / div);
                     head.set_local_translation(head_offset * init_point.unwrap());
                     head.set_local_rotation(UnitQuaternion::from_euler_angles(pitch*DEG2RAD, yaw*DEG2RAD, roll*DEG2RAD));
+                    head_info = Some((yaw, pitch, roll, tx, ty, tz));
                 }
                 Input::TobiiGaze { x, y } => {
                     gaze.set_local_translation(Translation3::new((x-0.5) * monitor_width, (-y+0.5)*monitor_height, 0.0));
+                    gaze_info = Some((x,y));
                 }
                 Input::TobiiEyePosition { left_xyz, right_xyz } => {
                     let left_valid = left_xyz != [0.0,0.0,0.0];
@@ -51,6 +61,10 @@ pub fn run(rx: Receiver<Input>) {
                     if init_point.is_none() && left_valid && right_valid {
                         let middle = (left_loc.vector + right_loc.vector) * 0.5;
                         init_point = Some(Translation3::from_vector(middle));
+                    }
+
+                    if let (Some((yaw, pitch, roll, tx, ty, tz)), Some((gaze_x, gaze_y))) = (head_info, gaze_info) {
+                        writeln!(&mut data_f, "{},{},{},{},{},{},{},{},{},{},{},{},{},{}",yaw, pitch, roll, tx, ty, tz, left_xyz[0], left_xyz[1], left_xyz[2], right_xyz[0], right_xyz[1], right_xyz[2], gaze_x, gaze_y).unwrap();
                     }
                 }
             }

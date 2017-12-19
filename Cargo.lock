@@ -202,7 +202,7 @@ dependencies = [
  "linuxtrack-sys 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "nalgebra 0.13.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "signpost 0.1.0 (git+https://github.com/pcwalton/signpost)",
- "tobii-sys 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tobii-sys 0.1.0",
 ]
 
 [[package]]
@@ -596,7 +596,6 @@ source = "git+https://github.com/pcwalton/signpost#7ed712507f343c38646b9d1fefd04
 [[package]]
 name = "tobii-sys"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "typenum"
@@ -707,7 +706,6 @@ dependencies = [
 "checksum scopeguard 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "94258f53601af11e6a49f722422f6e3425c52b06245a5cf9bc09908b174f5e27"
 "checksum semver 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "2d5b7638a1f03815d94e88cb3b3c08e87f0db4d683ef499d1836aaf70a45623f"
 "checksum signpost 0.1.0 (git+https://github.com/pcwalton/signpost)" = "<none>"
-"checksum tobii-sys 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ccb8ed6b45b23d1a7370d1f905af36c13a89918fb5ffd2ce7edee9768714791e"
 "checksum typenum 1.9.0 (registry+https://github.com/rust-lang/crates.io-index)" = "13a99dc6780ef33c78780b826cf9d2a78840b72cae9474de4bcaf9051e60ebbd"
 "checksum user32-sys 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "4ef4711d107b21b410a3a974b1204d9accc8b10dad75d8324b5d755de1617d47"
 "checksum vcpkg 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "9e0a7d8bed3178a8fb112199d466eeca9ed09a14ba8ad67718179b4fd5487d0b"

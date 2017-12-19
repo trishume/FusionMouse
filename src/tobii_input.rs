@@ -30,10 +30,10 @@ unsafe extern "C" fn gaze_callback(gaze_point: *const GazePoint,
     assert_ne!(user_data, ptr::null_mut());
     let context = &*(user_data as *const CallbackContext);
     let pt = &*gaze_point;
-    if pt.validity != TOBII_VALIDITY_VALID {
-        println!("INVALID {}", pt.timestamp_us);
-        return;
-    }
+    // if pt.validity != TOBII_VALIDITY_VALID {
+    //     println!("INVALID {}", pt.timestamp_us);
+    //     return;
+    // }
     let event = Input::TobiiGaze {
         x: pt.position_xy[0],
         y: pt.position_xy[1],
@@ -42,7 +42,7 @@ unsafe extern "C" fn gaze_callback(gaze_point: *const GazePoint,
     context.output.send(event).unwrap();
 }
 
-unsafe extern "C" fn gaze_origin_callback(gaze_origin: *const GazeOrigin,
+unsafe extern "C" fn gaze_origin_callback(gaze_origin: *const EyePositionNormalized,
                                    user_data: *mut ::std::os::raw::c_void) {
     assert_ne!(user_data, ptr::null_mut());
     let context = &*(user_data as *const CallbackContext);
@@ -97,11 +97,11 @@ unsafe fn input_loop(output: SyncSender<Input>,
     let _subscription = PtrWrapper::new(device.ptr(), tobii_gaze_point_unsubscribe);
     status_to_result(status)?;
 
-    let status = tobii_gaze_origin_subscribe(device.ptr(),
+    let status = tobii_eye_position_normalized_subscribe(device.ptr(),
                                             Some(gaze_origin_callback),
                                             (context_borrow as *mut CallbackContext) as
                                             *mut raw::c_void);
-    let _subscription2 = PtrWrapper::new(device.ptr(), tobii_gaze_origin_unsubscribe);
+    let _subscription2 = PtrWrapper::new(device.ptr(), tobii_eye_position_normalized_unsubscribe);
     status_to_result(status)?;
 
     loop {
