@@ -7,7 +7,7 @@ authors = ["Tristan Hume <tristan@thume.ca>"]
 linuxtrack-sys = "1.0.1"
 cgmath = "0.15"
 enigo = {git="https://github.com/trishume/enigo"}
-tobii-sys = "0.1.0"
+tobii-sys = { version = "0.1.0", optional = true }
 signpost = {git="https://github.com/pcwalton/signpost"}
 
 glium = { version = "0.19.0", optional = true }
@@ -17,3 +17,4 @@ objc = { version = "0.2.2", optional = true }
 [features]
 
 viz-2d = ["glium","cocoa", "objc"]
+tobii = ["tobii-sys"]
