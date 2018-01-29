@@ -207,7 +207,7 @@ pub struct PolyMouseParams {
 pub struct PolyMouseTransform {
     params: PolyMouseParams,
     throwing: bool,
-    smoothed_head_speed: f32,
+    smoothed_head_vel: Vector2<f32>,
     pub last_jump_destination: Vector2<f32>,
     x_round: AccumulatingRounder,
     y_round: AccumulatingRounder,
@@ -218,7 +218,7 @@ impl PolyMouseTransform {
         PolyMouseTransform {
             params,
             throwing: false,
-            smoothed_head_speed: 0.0,
+            smoothed_head_vel: vec2(0.0, 0.0),
             last_jump_destination: vec2(0.0, 0.0),
             x_round: AccumulatingRounder::new(),
             y_round: AccumulatingRounder::new(),
@@ -234,15 +234,14 @@ impl PolyMouseTransform {
         let mouse_pt_f = vec2(mouse_pt.x as f32, mouse_pt.y as f32);
 
         // TODO this is accelerated speed, should the acceleration be after?
-        let head_speed = head_delta.magnitude() / dt;
-        // TODO the amount of smoothing isn't independent of dt
-        self.smoothed_head_speed = self.smoothed_head_speed *
-                                   (1.0 - self.params.head_smoothing_factor) +
-                                   head_speed * self.params.head_smoothing_factor;
+        // (px/tick) / (s/tick)
+        let head_vel = head_delta / dt;
+        self.smoothed_head_vel += (head_vel - self.smoothed_head_vel)
+            / (self.params.head_smoothing_factor / dt);
 
-        // println!("{:?}", self.smoothed_head_speed);
+        // println!("{:?}", self.smoothed_head_vel.magnitude());
         if self.looking_far_away(gaze_pt, mouse_pt_f) &&
-           self.smoothed_head_speed > self.params.throw_thresh_speed {
+           self.smoothed_head_vel.magnitude() > self.params.throw_thresh_speed {
             self.throwing = true;
         }
 
@@ -267,9 +266,12 @@ impl PolyMouseTransform {
         }
     }
 
+    pub fn jump_radius(&self) -> f32 {
+        self.params.min_jump + self.smoothed_head_vel.magnitude() * self.params.speed_expand_factor
+    }
+
     fn looking_far_away(&self, gaze_pt: Vector2<f32>, mouse_pt: Vector2<f32>) -> bool {
-        let jump_radius = self.params.min_jump +
-                          self.smoothed_head_speed * self.params.speed_expand_factor;
+        let jump_radius = self.jump_radius();
         let small_jump = jump_radius * self.params.small_jump_factor;
         mouse_pt.distance(gaze_pt) > jump_radius &&
         self.last_jump_destination.distance(gaze_pt) > small_jump

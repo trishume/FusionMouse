@@ -56,8 +56,8 @@ fn run_pipeline(rx: Receiver<Input>, debug: DebugSender) {
     let polymouse_params = PolyMouseParams {
         min_jump: 100.0,
         speed_expand_factor: 0.0, // TODO translate delta->speed
-        head_smoothing_factor: 1.0, // TODO tune for dt
-        throw_thresh_speed: 300.0, // pixels per second
+        head_smoothing_factor: 0.05,
+        throw_thresh_speed: 200.0, // pixels per second
         throw_speed: 8000.0, // pixels per second
         small_jump_factor: 0.75,
     };
@@ -136,7 +136,7 @@ fn run_pipeline(rx: Receiver<Input>, debug: DebugSender) {
                 let circle = DebugPoint {
                     offset: [dest.x as f32, dest.y as f32],
                     color: [0.0, 1.0, 0.0],
-                    size: polymouse_params.min_jump*2.0,
+                    size: poly_mouse.jump_radius()*2.0,
                 };
                 debug_frame.points.push(circle);
                 let circle2 = DebugPoint {
@@ -157,7 +157,8 @@ fn run_pipeline(rx: Receiver<Input>, debug: DebugSender) {
             let dt = calc_dt(tick, &mut last_gaze_tick);
             px_gaze = vec2(raw_gaze.x * (display_width as f32),
                            raw_gaze.y * (display_height as f32));
-            gaze_pt = fixation_filter.transform(px_gaze, dt);
+            // gaze_pt = fixation_filter.transform(px_gaze, dt);
+            gaze_pt = px_gaze;
             // println!("GAZE {:?}", gaze_pt);
         }
     }
