@@ -3,6 +3,7 @@ use std::thread;
 
 pub enum Input {
     LinuxTrackHead { yaw: f32, pitch: f32 },
+    #[cfg(feature = "tobii-sys")]
     TobiiGaze { x: f32, y: f32 },
     Shutdown,
 }

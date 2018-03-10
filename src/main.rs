@@ -1,4 +1,5 @@
 extern crate linuxtrack_sys;
+#[cfg(feature = "tobii")]
 extern crate tobii_sys;
 extern crate cgmath;
 extern crate enigo;
@@ -14,6 +15,7 @@ extern crate objc;
 
 mod inputs;
 mod ltr_input;
+#[cfg(feature = "tobii")]
 mod tobii_input;
 mod transforms;
 
@@ -89,6 +91,7 @@ fn run_pipeline(rx: Receiver<Input>, debug: DebugSender) {
                 raw_head_pose = vec2(yaw, pitch) * -1.0;
                 tick_head = true;
             }
+            #[cfg(feature = "tobii")]
             Input::TobiiGaze { x, y } => {
                 raw_gaze = vec2(x, y);
                 tick_gaze = true;
@@ -168,6 +171,7 @@ fn main() {
     println!("Hello, world!");
     let (mut pool, rx) = InputPool::new();
     pool.spawn(ltr_input::listen);
+    #[cfg(feature = "tobii")]
     pool.spawn(tobii_input::listen);
 
     #[cfg(feature = "viz-2d")]
