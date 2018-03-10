@@ -267,7 +267,7 @@ dependencies = [
  "linuxtrack-sys 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "objc 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "signpost 0.1.0 (git+https://github.com/pcwalton/signpost)",
- "tobii-sys 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tobii-sys 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -585,7 +585,7 @@ dependencies = [
 
 [[package]]
 name = "tobii-sys"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -833,7 +833,7 @@ dependencies = [
 "checksum smallvec 0.4.4 (registry+https://github.com/rust-lang/crates.io-index)" = "ee4f357e8cd37bf8822e1b964e96fd39e2cb5a0424f8aaa284ccaccc2162411c"
 "checksum target_build_utils 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "013d134ae4a25ee744ad6129db589018558f620ddfa44043887cdd45fa08e75c"
 "checksum tempfile 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "11ce2fe9db64b842314052e2421ac61a73ce41b898dc8e3750398b219c5fc1e0"
-"checksum tobii-sys 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ccb8ed6b45b23d1a7370d1f905af36c13a89918fb5ffd2ce7edee9768714791e"
+"checksum tobii-sys 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "60207582b11e4b8ed30be8a154928f44c6e82d783c9dad40ca189f90a4aa1179"
 "checksum token_store 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "a686838375fc11103b9c1529c6508320b7bd5e2401cd62831ca51b3e82e61849"
 "checksum user32-sys 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "6717129de5ac253f5642fc78a51d0c7de6f9f53d617fc94e9bae7f6e71cf5504"
 "checksum user32-sys 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "4ef4711d107b21b410a3a974b1204d9accc8b10dad75d8324b5d755de1617d47"

@@ -90,7 +90,7 @@ unsafe fn input_loop(output: SyncSender<Input>,
             Err(_) => (),
         }
 
-        let status = tobii_wait_for_callbacks(device.ptr());
+        let status = helpers::wait_for_device_callbacks(device.ptr());
         match status_to_result(status) {
             Err(TobiiError::TimedOut) => continue,
             Err(TobiiError::ConnectionFailed) => {
@@ -101,7 +101,7 @@ unsafe fn input_loop(output: SyncSender<Input>,
             Ok(()) => (),
         }
 
-        let status = tobii_process_callbacks(device.ptr());
+        let status = tobii_device_process_callbacks(device.ptr());
         if status == TOBII_ERROR_CONNECTION_FAILED {
             status_to_result(helpers::reconnect(device.ptr()))?;
             continue;

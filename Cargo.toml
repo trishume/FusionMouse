@@ -7,7 +7,7 @@ authors = ["Tristan Hume <tristan@thume.ca>"]
 linuxtrack-sys = "1.0.1"
 cgmath = "0.15"
 enigo = {git="https://github.com/trishume/enigo"}
-tobii-sys = "0.1.0"
+tobii-sys = "0.2.0"
 signpost = {git="https://github.com/pcwalton/signpost"}
 
 glium = { version = "0.19.0", optional = true }
