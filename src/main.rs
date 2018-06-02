@@ -76,6 +76,7 @@ fn run_pipeline(rx: Receiver<Input>, debug: DebugSender) {
     let mut last_head_pose: Option<Vector2<f32>> = None;
 
     let mut poly_mouse = PolyMouseTransform::new(polymouse_params.clone());
+    let mut freezer = FreezeTransformer::new(0.3);
 
     let mut fixation_filter = FixationFilter::new(0.03, 150.0);
     let mut gaze_pt: Vector2<f32> = vec2(0.0, 0.0);
@@ -124,8 +125,10 @@ fn run_pipeline(rx: Receiver<Input>, debug: DebugSender) {
             let dest = poly_mouse.transform(gaze_pt, mouse_pt, head_cursor_move, dt);
             let confined = vec2(max(0, min(display_width as i32, dest.x)),
                                 max(0, min(display_height as i32, dest.y)));
+            let mouse_down = Enigo::pressed_buttons() != 0;
+            let new_pos = freezer.transform(confined, mouse_down, dt);
 
-            if confined != mouse_pt {
+            if new_pos != mouse_pt {
                 enigo.mouse_move_to(confined.x, confined.y);
             }
 

@@ -277,3 +277,41 @@ impl PolyMouseTransform {
         self.last_jump_destination.distance(gaze_pt) > small_jump
     }
 }
+
+pub struct FreezeTransformer<T: Clone> {
+    freeze_time: f32,
+    prev_mouse_down: bool,
+    time_since_down: f32,
+    frozen_val: Option<T>,
+}
+
+impl<T: Clone> FreezeTransformer<T> {
+    pub fn new(freeze_time: f32) -> Self {
+        FreezeTransformer {
+            freeze_time,
+            prev_mouse_down: false,
+            time_since_down: 0.0,
+            frozen_val: None,
+        }
+    }
+
+    pub fn transform(&mut self, val: T, mouse_down: bool, dt: f32) -> T {
+        if !self.prev_mouse_down && mouse_down {
+            self.time_since_down = 0.0;
+            self.frozen_val = Some(val.clone());
+        }
+        self.prev_mouse_down = mouse_down;
+
+        if !mouse_down {
+            return val;
+        }
+
+        self.time_since_down += dt;
+
+        if self.time_since_down > self.freeze_time {
+            val
+        } else {
+            self.frozen_val.as_ref().unwrap().clone()
+        }
+    }
+}
