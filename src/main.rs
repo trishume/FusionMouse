@@ -63,6 +63,7 @@ fn run_pipeline(rx: Receiver<Input>, debug: DebugSender) {
         throw_speed: 8000.0, // pixels per second
         small_jump_factor: 0.75,
     };
+    let use_fixation_filter = false;
 
     // input state
     let mut raw_head_pose: Vector2<f32> = vec2(0.0, 0.0);
@@ -160,8 +161,12 @@ fn run_pipeline(rx: Receiver<Input>, debug: DebugSender) {
             let dt = calc_dt(tick, &mut last_gaze_tick);
             px_gaze = vec2(raw_gaze.x * (display_width as f32),
                            raw_gaze.y * (display_height as f32));
-            // gaze_pt = fixation_filter.transform(px_gaze, dt);
-            gaze_pt = px_gaze;
+            if use_fixation_filter {
+                gaze_pt = fixation_filter.transform(px_gaze, dt);
+            } else {
+                gaze_pt = px_gaze;
+            }
+
             // println!("GAZE {:?}", gaze_pt);
         }
     }
